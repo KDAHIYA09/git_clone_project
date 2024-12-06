@@ -6,8 +6,7 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.gitclone.R
-import com.example.gitclone.recyclerview_class_package.data_class.RepositoriesDataClass
+import com.example.gitclone.recyclerview_class_package.data_class_model.RepositoriesDataClass
 
 class MainActivity : AppCompatActivity(), RepositoryAdapter.OnItemClickListener {
 
