@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">Git clone</string>
+    <string name="no_results_found_please_search_for_a_repository">No results found. Please search for a repository.</string>
+    <string name="this_is_the_repository_description">This is the repository description.</string>
+    <string name="repository_name">Repository Name</string>
+    <string name="profile_image">Profile image</string>
 </resources>
