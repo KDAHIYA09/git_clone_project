@@ -1,34 +1,48 @@
 package com.example.gitclone
 
-import RepositoryAdapter
+import android.content.Intent
 import android.os.Bundle
-import androidx.appcompat.widget.SearchView
 import android.widget.Toast
-import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.SearchView
+import androidx.activity.viewModels
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.gitclone.api_end_points.GitHubApiService
 import com.example.gitclone.database.repositries_database
+import com.example.gitclone.model_class.Contributor
 import com.example.gitclone.recyclerview_class_package.data_class_model.RepositoriesDataClass
+import com.example.gitclone.repositories.GitHubRepository
 import com.example.gitclone.repositories.repositories_RepositoryClass
-import com.example.gitclone.viewModel.RepositoryViewModel
-import com.example.gitclone.viewModel.RepositoryViewModelFactory
-import kotlinx.coroutines.CoroutineScope
+import com.example.gitclone.viewModel.GitHubViewModel
+import com.example.gitclone.viewModel.GitHubViewModelFactory
+import com.example.gitclone.utils.NetworkUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.withContext
 
-class MainActivity : AppCompatActivity(), RepositoryAdapter.OnItemClickListener {
+class MainActivity : AppCompatActivity(), RepositoryAdapterTest.OnItemClickListener {
 
     private lateinit var recyclerView: RecyclerView
-    private lateinit var repositoryAdapter: RepositoryAdapter
+    private lateinit var repositoryAdapter2: RepositoryAdapterTest
     private lateinit var searchView: SearchView
+    private lateinit var viewModel: GitHubViewModel
+    private var currentPage = 1
+    private var isLoading = false
+    private var keyword: String = ""
 
     // ViewModel with Factory
-    private val repositoryViewModel: RepositoryViewModel by viewModels {
-        val database = repositries_database.getDatabaseInstance(applicationContext)
-        val repository = repositories_RepositoryClass(database.repositoriesDao())
-        RepositoryViewModelFactory(repository)
+    private val repositoryViewModel: GitHubViewModel by viewModels {
+        val apiRepository = GitHubRepository(
+            GitHubApiService.create(),
+            repositories_RepositoryClass(repositries_database.getDatabaseInstance(applicationContext).repositoriesDao())
+        )
+        val dbRepository = repositories_RepositoryClass(
+            repositries_database.getDatabaseInstance(applicationContext).repositoriesDao()
+        )
+        GitHubViewModelFactory(apiRepository, dbRepository)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -38,21 +52,26 @@ class MainActivity : AppCompatActivity(), RepositoryAdapter.OnItemClickListener 
         recyclerView = findViewById(R.id.recyclerView)
         searchView = findViewById(R.id.searchView)
 
-        // Set up RecyclerView
-        repositoryAdapter = RepositoryAdapter(mutableListOf(), this) // Use mutableListOf() for a MutableList
+        repositoryAdapter2 = RepositoryAdapterTest(mutableListOf(), this)
         recyclerView.layoutManager = LinearLayoutManager(this)
-        recyclerView.adapter = repositoryAdapter
+        recyclerView.adapter = repositoryAdapter2
 
-        // Insert dummy data
-        insertDummyData()
+        viewModel = repositoryViewModel
 
-        // Observe LiveData from ViewModel
         observeViewModel()
 
-        // Set up SearchView to fetch data from the database
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean {
-                query?.let { fetchRepositories(it) }
+                query?.let {
+                    if (it.isNotEmpty()) {
+                        if (NetworkUtils.isNetworkAvailable(this@MainActivity)) {
+                            fetchRepositories(it)
+                        } else {
+                            // If no internet, fetch from the database
+                            fetchRepositoriesFromDatabase(it)
+                        }
+                    }
+                }
                 return true
             }
 
@@ -63,46 +82,54 @@ class MainActivity : AppCompatActivity(), RepositoryAdapter.OnItemClickListener 
     }
 
     private fun observeViewModel() {
-        // Observe repositories list
-        repositoryViewModel.repositories.observe(this, Observer { repositories ->
-            repositoryAdapter.updateData(repositories)
+        viewModel.repositories.observe(this, Observer { repositories ->
+            repositories?.let {
+                isLoading = false
+                repositoryAdapter2.updateData(it)
+            }
         })
 
-        // Observe noDataAvailable flag
-        repositoryViewModel.noDataAvailable.observe(this, Observer { noData ->
-            if (noData) {
-                Toast.makeText(this, "No data available for the entered keyword", Toast.LENGTH_SHORT).show()
+        viewModel.error.observe(this, Observer { errorMessage ->
+            errorMessage?.let {
+                Toast.makeText(this, it, Toast.LENGTH_SHORT).show()
             }
         })
     }
 
-    private fun fetchRepositories(keyword: String) {
-        // Fetch repositories for the entered keyword
-        repositoryViewModel.fetchRepositories(keyword)
+    private fun fetchRepositories(query: String, page: Int = 1) {
+        keyword = query
+        isLoading = true
+        viewModel.fetchRepositories(query, page)
     }
 
-    private fun insertDummyData() {
+    private fun fetchRepositoriesFromDatabase(query: String) {
+        // Fetch repositories from the database for the given keyword in a background thread
         CoroutineScope(Dispatchers.IO).launch {
-            val dummyData = List(10) { index ->
-                RepositoriesDataClass(
-                    keyword = "dummy",
-                    name = "Dummy Repo $index",
-                    description = "This is a description for Dummy Repo $index.",
-                    language = "Kotlin",
-                    stars = (100..1000).random(),
-                    updatedAt = "${(1..10).random()} days ago",
-                    profileImageUrl = "https://example.com/profile$index.jpg",
-                    ownerName = "Owner $index",
-                    projectUrl = "https://github.com/example/repo$index"
-                )
+            val repositoriesFromDb = viewModel.getRepositoriesForKeyword(query)
+            withContext(Dispatchers.Main) {
+                // Update UI on the main thread
+                if (repositoriesFromDb.isNotEmpty()) {
+                    repositoryAdapter2.updateData(repositoriesFromDb)
+                } else {
+                    Toast.makeText(this@MainActivity, "No repositories found in database", Toast.LENGTH_SHORT).show()
+                }
             }
-            val database = repositries_database.getDatabaseInstance(applicationContext)
-            database.repositoriesDao().insertAll(dummyData)
         }
     }
 
     override fun onItemClick(repository: RepositoriesDataClass) {
-        // Handle item click (e.g., navigate to another activity or show details)
-        Toast.makeText(this, "Clicked on ${repository.name}", Toast.LENGTH_SHORT).show()
+        val intent = Intent(this, repository_details_screen::class.java).apply {
+            putExtra("REPO_NAME", repository.name)
+            putExtra("OWNER_NAME", repository.ownerName)
+            putExtra("DESCRIPTION", repository.description)
+            putExtra("STARS", repository.stars)
+            putExtra("LANGUAGE", repository.language)
+            putExtra("PROJECT_URL", repository.projectUrl)
+            putExtra("PROFILE_IMAGE_URL", repository.profileImageUrl)
+        }
+        startActivity(intent)
     }
 }
+
+
+
