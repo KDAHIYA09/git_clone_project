@@ -10,17 +10,22 @@ import com.example.gitclone.R
 import com.example.gitclone.recyclerview_class_package.data_class_model.RepositoriesDataClass
 
 class RepositoryAdapter(
-    private val repositoryList: List<RepositoriesDataClass>,
+    private var repositoryList: MutableList<RepositoriesDataClass>, // Use MutableList here
     private val itemClickListener: OnItemClickListener
 ) : RecyclerView.Adapter<RepositoryAdapter.RepositoryViewHolder>() {
 
-    // Create the ViewHolder for each repository item
+    // Update this method to refresh the list dynamically
+    fun updateData(newRepositories: List<RepositoriesDataClass>) {
+        repositoryList.clear()
+        repositoryList.addAll(newRepositories)
+        notifyDataSetChanged()
+    }
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RepositoryViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.item_repository, parent, false)
         return RepositoryViewHolder(view)
     }
 
-    // Bind the repository data to the views
     override fun onBindViewHolder(holder: RepositoryViewHolder, position: Int) {
         val repository = repositoryList[position]
 
@@ -42,12 +47,10 @@ class RepositoryAdapter(
         }
     }
 
-    // Return the size of the repository list
     override fun getItemCount(): Int {
         return repositoryList.size
     }
 
-    // Define the ViewHolder to hold references to the views
     inner class RepositoryViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val profileImage: CircleImageView = itemView.findViewById(R.id.profile_image)
         val ownerNameText: TextView = itemView.findViewById(R.id.textOwnerName)
@@ -58,8 +61,8 @@ class RepositoryAdapter(
         val lastUpdatedText: TextView = itemView.findViewById(R.id.textLastUpdated)
     }
 
-    // Interface for item click listener
     interface OnItemClickListener {
         fun onItemClick(repository: RepositoriesDataClass)
     }
 }
+

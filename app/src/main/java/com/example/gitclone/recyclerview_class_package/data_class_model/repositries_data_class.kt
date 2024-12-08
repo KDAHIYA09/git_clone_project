@@ -5,17 +5,18 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "repositories")
 data class RepositoriesDataClass(
-    @PrimaryKey(autoGenerate = true) val id: Int = 0, // Unique ID (GitHub Repository ID or similar)
-    val keyword: String,               // Search keyword used
-    val name: String,                  // Repository name
-    val description: String?,          // Nullable description
-    val language: String?,             // Nullable programming language
-    val stars: Int,                    // Number of stars
-    val updatedAt: String,             // Last updated timestamp
-    val profileImageUrl: String,       // Profile image URL
-    val ownerName: String,             // Owner's name
-    val projectUrl: String             // Link to the project on GitHub
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val keyword: String,
+    val name: String,
+    val description: String?,
+    val language: String?,
+    val stars: Int,
+    val updatedAt: String,
+    val profileImageUrl: String,
+    val ownerName: String,
+    val projectUrl: String
 )
+
 
 
 //for database

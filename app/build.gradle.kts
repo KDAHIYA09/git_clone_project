@@ -85,14 +85,9 @@ dependencies {
     implementation("com.github.bumptech.glide:glide:4.15.1")
     kapt("com.github.bumptech.glide:compiler:4.15.1")
 
-//    // Room Database
-//    implementation("androidx.room:room-runtime:2.5.1")
-//    annotationProcessor("androidx.room:room-compiler:2.5.1")  // For Java
-//    kapt("androidx.room:room-compiler:2.5.1")  // For Kotlin (use kapt instead of annotationProcessor)
-//
-//    // LiveData and ViewModel dependencies for MVVM
-//    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.5.1")
-//    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.5.1")
+    implementation ("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation ("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation ("com.squareup.okhttp3:logging-interceptor:4.9.0")
 
 
 

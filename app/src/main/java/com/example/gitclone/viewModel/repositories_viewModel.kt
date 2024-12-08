@@ -6,7 +6,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gitclone.recyclerview_class_package.data_class_model.RepositoriesDataClass
 import com.example.gitclone.repositories.repositories_RepositoryClass
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
 
 class RepositoryViewModel(private val repository: repositories_RepositoryClass) : ViewModel() {
 
@@ -22,15 +25,24 @@ class RepositoryViewModel(private val repository: repositories_RepositoryClass) 
      */
     fun fetchRepositories(keyword: String) {
         viewModelScope.launch {
-            val data = repository.getRepositoriesForKeyword(keyword)
-            if (data.isEmpty()) {
-                // No data available
-                _noDataAvailable.postValue(true)
-                _repositories.postValue(emptyList())
-            } else {
-                // Data available
-                _noDataAvailable.postValue(false)
-                _repositories.postValue(data)
+            try {
+                // Switch to IO Dispatcher for database operations
+                val data = withContext(Dispatchers.IO) {
+                    repository.getRepositoriesForKeyword(keyword)
+                }
+
+                if (data.isEmpty()) {
+                    // No data available
+                    _noDataAvailable.postValue(true)
+                    _repositories.postValue(emptyList())
+                } else {
+                    // Data available
+                    _noDataAvailable.postValue(false)
+                    _repositories.postValue(data)
+                }
+            } catch (e: Exception) {
+                // Handle exceptions if any
+                e.printStackTrace()
             }
         }
     }
@@ -38,11 +50,20 @@ class RepositoryViewModel(private val repository: repositories_RepositoryClass) 
     /**
      * Update repositories for a given keyword (useful for syncing new data).
      */
-    fun updateRepositories(keyword: String, repositories: List<RepositoriesDataClass>) {
-        viewModelScope.launch {
-            repository.updateRepositoriesByKeyword(keyword, repositories)
-        }
-    }
+//    fun updateRepositories(keyword: String, repositories: List<RepositoriesDataClass>) {
+//        viewModelScope.launch {
+//            repository.updateRepositoriesByKeyword(keyword, repositories)
+//        }
+//    }
+
+    /**
+     * Delete repositories for the given keyword.
+     */
+//    fun deleteRepositories(keyword: String) {
+//        viewModelScope.launch {
+//            repository.deleteRepositoriesByKeyword(keyword)
+//        }
+//    }
 
     /**
      * Check if repositories exist for the given keyword.

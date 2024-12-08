@@ -1,101 +1,108 @@
 package com.example.gitclone
 
-// MainActivity.kt
 import RepositoryAdapter
 import android.os.Bundle
+import androidx.appcompat.widget.SearchView
+import android.widget.Toast
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.gitclone.database.repositries_database
 import com.example.gitclone.recyclerview_class_package.data_class_model.RepositoriesDataClass
+import com.example.gitclone.repositories.repositories_RepositoryClass
+import com.example.gitclone.viewModel.RepositoryViewModel
+import com.example.gitclone.viewModel.RepositoryViewModelFactory
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity(), RepositoryAdapter.OnItemClickListener {
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var repositoryAdapter: RepositoryAdapter
-    private val repositoryList = listOf(
-        RepositoriesDataClass(
-            keyword = "example",
-            name = "Repo 1",
-            description = "This is the first repository example.",
-            language = "Kotlin",
-            stars = 1200,
-            updatedAt = "1 day ago",
-            profileImageUrl = "https://example.com/profile1.jpg",
-            ownerName = "Owner 1",
-            projectUrl = "https://github.com/example/repo1"
-        ),
-        RepositoriesDataClass(
-            keyword = "example",
-            name = "Repo 2",
-            description = "A repository example showcasing Java.",
-            language = "Java",
-            stars = 500,
-            updatedAt = "3 days ago",
-            profileImageUrl = "https://example.com/profile2.jpg",
-            ownerName = "Owner 2",
-            projectUrl = "https://github.com/example/repo2"
-        ),
-        RepositoriesDataClass(
-            keyword = "example",
-            name = "Repo 3",
-            description = "This is a Python project repository.",
-            language = "Python",
-            stars = 150,
-            updatedAt = "5 days ago",
-            profileImageUrl = "https://example.com/profile3.jpg",
-            ownerName = "Owner 3",
-            projectUrl = "https://github.com/example/repo3"
-        ),
-        RepositoriesDataClass(
-            keyword = "example",
-            name = "Repo 4",
-            description = "A popular JavaScript project.",
-            language = "JavaScript",
-            stars = 2300,
-            updatedAt = "7 days ago",
-            profileImageUrl = "https://example.com/profile4.jpg",
-            ownerName = "Owner 4",
-            projectUrl = "https://github.com/example/repo4"
-        ),
-        RepositoriesDataClass(
-            keyword = "example",
-            name = "Repo 5",
-            description = "This is a Swift repository example.",
-            language = "Swift",
-            stars = 900,
-            updatedAt = "10 days ago",
-            profileImageUrl = "https://example.com/profile5.jpg",
-            ownerName = "Owner 5",
-            projectUrl = "https://github.com/example/repo5"
-        ),
-        RepositoriesDataClass(
-            keyword = "example",
-            name = "Repo 6",
-            description = "An interesting Ruby project.",
-            language = "Ruby",
-            stars = 300,
-            updatedAt = "12 days ago",
-            profileImageUrl = "https://example.com/profile6.jpg",
-            ownerName = "Owner 6",
-            projectUrl = "https://github.com/example/repo6"
-        )
-    )
+    private lateinit var searchView: SearchView
 
+    // ViewModel with Factory
+    private val repositoryViewModel: RepositoryViewModel by viewModels {
+        val database = repositries_database.getDatabaseInstance(applicationContext)
+        val repository = repositories_RepositoryClass(database.repositoriesDao())
+        RepositoryViewModelFactory(repository)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         recyclerView = findViewById(R.id.recyclerView)
+        searchView = findViewById(R.id.searchView)
 
-        // Set up the RecyclerView with the Adapter and LayoutManager
+        // Set up RecyclerView
+        repositoryAdapter = RepositoryAdapter(mutableListOf(), this) // Use mutableListOf() for a MutableList
         recyclerView.layoutManager = LinearLayoutManager(this)
-        repositoryAdapter = RepositoryAdapter(repositoryList, this)
         recyclerView.adapter = repositoryAdapter
+
+        // Insert dummy data
+        insertDummyData()
+
+        // Observe LiveData from ViewModel
+        observeViewModel()
+
+        // Set up SearchView to fetch data from the database
+        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                query?.let { fetchRepositories(it) }
+                return true
+            }
+
+            override fun onQueryTextChange(newText: String?): Boolean {
+                return false
+            }
+        })
     }
 
-    // Handle item clicks
+    private fun observeViewModel() {
+        // Observe repositories list
+        repositoryViewModel.repositories.observe(this, Observer { repositories ->
+            repositoryAdapter.updateData(repositories)
+        })
+
+        // Observe noDataAvailable flag
+        repositoryViewModel.noDataAvailable.observe(this, Observer { noData ->
+            if (noData) {
+                Toast.makeText(this, "No data available for the entered keyword", Toast.LENGTH_SHORT).show()
+            }
+        })
+    }
+
+    private fun fetchRepositories(keyword: String) {
+        // Fetch repositories for the entered keyword
+        repositoryViewModel.fetchRepositories(keyword)
+    }
+
+    private fun insertDummyData() {
+        CoroutineScope(Dispatchers.IO).launch {
+            val dummyData = List(10) { index ->
+                RepositoriesDataClass(
+                    keyword = "dummy",
+                    name = "Dummy Repo $index",
+                    description = "This is a description for Dummy Repo $index.",
+                    language = "Kotlin",
+                    stars = (100..1000).random(),
+                    updatedAt = "${(1..10).random()} days ago",
+                    profileImageUrl = "https://example.com/profile$index.jpg",
+                    ownerName = "Owner $index",
+                    projectUrl = "https://github.com/example/repo$index"
+                )
+            }
+            val database = repositries_database.getDatabaseInstance(applicationContext)
+            database.repositoriesDao().insertAll(dummyData)
+        }
+    }
+
     override fun onItemClick(repository: RepositoriesDataClass) {
-        // Handle the item click event (e.g., navigate to RepoDetails activity)
+        // Handle item click (e.g., navigate to another activity or show details)
+        Toast.makeText(this, "Clicked on ${repository.name}", Toast.LENGTH_SHORT).show()
     }
 }

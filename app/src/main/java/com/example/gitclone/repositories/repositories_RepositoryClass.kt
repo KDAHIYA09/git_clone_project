@@ -1,5 +1,6 @@
 package com.example.gitclone.repositories
 
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gitclone.dao.repositories_dao
@@ -8,34 +9,28 @@ import kotlinx.coroutines.launch
 
 class repositories_RepositoryClass(private val repositoriesDao: repositories_dao) {
 
-    /**
-     * Insert a list of repositories into the database.
-     */
+    // Insert repositories
     suspend fun insertRepositories(repositories: List<RepositoriesDataClass>) {
         repositoriesDao.insertAll(repositories)
     }
 
-    /**
-     * Retrieve repositories for a given keyword.
-     * Returns an empty list if no repositories are found.
-     */
+    // Get repositories by keyword
     suspend fun getRepositoriesForKeyword(keyword: String): List<RepositoriesDataClass> {
-        return repositoriesDao.getRepositoriesByKeyword(keyword).ifEmpty {
-            emptyList() // Handle null safety by returning an empty list.
-        }
+        return repositoriesDao.getRepositoriesByKeyword(keyword)
     }
 
-    /**
-     * Update repositories for a specific keyword by replacing them with new data.
-     * Deletes old data and inserts the new data.
-     */
-    suspend fun updateRepositoriesByKeyword(keyword: String, repositories: List<RepositoriesDataClass>) {
-        repositoriesDao.updateRepositoriesByKeyword(keyword, repositories)
-    }
+    // Update repositories for a keyword by deleting old ones and inserting new ones
+//    suspend fun updateRepositoriesByKeyword(keyword: String, repositories: List<RepositoriesDataClass>) {
+//        repositoriesDao.deleteRepositoriesByKeyword(keyword)
+//        repositoriesDao.insertAll(repositories)
+//    }
+//
+//    // Delete repositories by keyword
+//    suspend fun deleteRepositoriesByKeyword(keyword: String) {
+//        repositoriesDao.deleteRepositoriesByKeyword(keyword)
+//    }
 
-    /**
-     * Check if a keyword exists in the database.
-     */
+    // Check if a keyword exists
     suspend fun doesKeywordExist(keyword: String): Boolean {
         return repositoriesDao.doesKeywordExist(keyword)
     }
