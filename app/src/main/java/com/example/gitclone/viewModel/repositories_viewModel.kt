@@ -47,6 +47,19 @@ class RepositoryViewModel(private val repository: repositories_RepositoryClass) 
         }
     }
 
+    fun addRepositories(repositoriesList: List<RepositoriesDataClass>) {
+        viewModelScope.launch {
+            try {
+                // Switch to IO Dispatcher for database operations
+                withContext(Dispatchers.IO) {
+                    repository.insertRepositories(repositoriesList) // Call the insert function in the repository
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
     /**
      * Update repositories for a given keyword (useful for syncing new data).
      */

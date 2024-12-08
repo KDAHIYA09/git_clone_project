@@ -2,15 +2,18 @@
     <!-- Base application theme. -->
     <style name="Base.Theme.GitClone" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your dark theme here. -->
-        <item name="colorPrimary">@color/dark_primary</item>
-        <item name="colorPrimaryVariant">@color/dark_primary_variant</item>
-        <item name="colorSecondary">@color/dark_secondary</item>
+        <item name="colorPrimary">@color/light_primary</item>
+        <item name="colorPrimaryVariant">@color/light_primary_variant</item>
+        <item name="colorSecondary">@color/light_secondary</item>
 
-        <item name="colorSurface">@color/dark_surface</item>
-        <item name="colorOnPrimary">@color/dark_on_primary</item>
-        <item name="colorOnSecondary">@color/dark_on_secondary</item>
-        <item name="colorOnSurface">@color/dark_on_surface</item>
-        <item name="colorOnBackground">@color/dark_on_background</item>
+        <item name="colorSurface">@color/light_surface</item>
+        <item name="colorOnPrimary">@color/light_on_primary</item>
+        <item name="colorOnSecondary">@color/light_on_secondary</item>
+        <item name="colorOnSurface">@color/light_on_surface</item>
+        <item name="colorOnBackground">@color/light_on_background</item>
+        <item name="android:textColorPrimary">@color/text_primary</item>
+        <item name="android:textColorSecondary">@color/text_secondary</item>
+        <item name="android:textColorTertiary">@color/text_disabled</item>
         <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
     </style>
 </resources>

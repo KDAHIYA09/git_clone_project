@@ -13,7 +13,10 @@
         <color name="on_surface">#eaeaea</color>
         <color name="on_background">#ffffff</color>
 
-        <color name="dark_primary">#24292f</color>
+    <color name="text_primary">#24292f</color> <!-- Dark Text for Light Theme -->
+    <color name="text_secondary">#586069</color> <!-- Muted Gray -->
+    <color name="text_disabled">#6a737d</color> <!-- Disabled Text -->
+    <color name="dark_primary">#24292f</color>
         <color name="dark_primary_variant">#6a737d</color>
         <color name="dark_secondary">#586069</color>
         <color name="dark_background">#121212</color>

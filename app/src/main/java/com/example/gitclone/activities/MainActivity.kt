@@ -1,27 +1,25 @@
-package com.example.gitclone
+package com.example.gitclone.activities
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
+import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.SearchView
 import androidx.activity.viewModels
+import androidx.appcompat.widget.SearchView
 import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.gitclone.R
+import com.example.gitclone.RepositoryAdapterTest
 import com.example.gitclone.api_end_points.GitHubApiService
-import com.example.gitclone.database.repositries_database
-import com.example.gitclone.model_class.Contributor
 import com.example.gitclone.recyclerview_class_package.data_class_model.RepositoriesDataClass
 import com.example.gitclone.repositories.GitHubRepository
-import com.example.gitclone.repositories.repositories_RepositoryClass
 import com.example.gitclone.viewModel.GitHubViewModel
 import com.example.gitclone.viewModel.GitHubViewModelFactory
 import com.example.gitclone.utils.NetworkUtils
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.withContext
 
 class MainActivity : AppCompatActivity(), RepositoryAdapterTest.OnItemClickListener {
 
@@ -29,20 +27,14 @@ class MainActivity : AppCompatActivity(), RepositoryAdapterTest.OnItemClickListe
     private lateinit var repositoryAdapter2: RepositoryAdapterTest
     private lateinit var searchView: SearchView
     private lateinit var viewModel: GitHubViewModel
-    private var currentPage = 1
+
     private var isLoading = false
     private var keyword: String = ""
 
     // ViewModel with Factory
     private val repositoryViewModel: GitHubViewModel by viewModels {
-        val apiRepository = GitHubRepository(
-            GitHubApiService.create(),
-            repositories_RepositoryClass(repositries_database.getDatabaseInstance(applicationContext).repositoriesDao())
-        )
-        val dbRepository = repositories_RepositoryClass(
-            repositries_database.getDatabaseInstance(applicationContext).repositoriesDao()
-        )
-        GitHubViewModelFactory(apiRepository, dbRepository)
+        val apiRepository = GitHubRepository(GitHubApiService.create())  // Pass only the API repository
+        GitHubViewModelFactory(apiRepository)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -51,12 +43,33 @@ class MainActivity : AppCompatActivity(), RepositoryAdapterTest.OnItemClickListe
 
         recyclerView = findViewById(R.id.recyclerView)
         searchView = findViewById(R.id.searchView)
+        val searchTextView = searchView.findViewById<android.widget.TextView>(androidx.appcompat.R.id.search_src_text)
+        searchTextView.setTextColor(resources.getColor(R.color.black))
+        searchTextView.setHintTextColor(resources.getColor(R.color.dark_on_surface))
 
         repositoryAdapter2 = RepositoryAdapterTest(mutableListOf(), this)
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = repositoryAdapter2
 
-        viewModel = repositoryViewModel
+        // Set the scroll listener to handle pagination
+        recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+                val layoutManager = recyclerView.layoutManager as LinearLayoutManager
+                val totalItemCount = layoutManager.itemCount
+                val visibleItemCount = layoutManager.childCount
+                val firstVisibleItemPosition = layoutManager.findFirstVisibleItemPosition()
+
+                // If the user has scrolled to the bottom of the list, load more repositories
+                if (visibleItemCount + firstVisibleItemPosition >= totalItemCount - 1) {
+                    // Get the current page number from the ViewModel
+                    val currentPage = repositoryViewModel.getCurrentPage()  // Access the currentPage
+                    repositoryViewModel.fetchRepositories(keyword, currentPage)  // Fetch next page of repositories
+                }
+            }
+        })
+
+        viewModel = ViewModelProvider(this, GitHubViewModelFactory(GitHubRepository(GitHubApiService.create()))).get(GitHubViewModel::class.java)
 
         observeViewModel()
 
@@ -67,8 +80,7 @@ class MainActivity : AppCompatActivity(), RepositoryAdapterTest.OnItemClickListe
                         if (NetworkUtils.isNetworkAvailable(this@MainActivity)) {
                             fetchRepositories(it)
                         } else {
-                            // If no internet, fetch from the database
-                            fetchRepositoriesFromDatabase(it)
+                            Toast.makeText(this@MainActivity, "No internet connection", Toast.LENGTH_SHORT).show()
                         }
                     }
                 }
@@ -82,39 +94,30 @@ class MainActivity : AppCompatActivity(), RepositoryAdapterTest.OnItemClickListe
     }
 
     private fun observeViewModel() {
-        viewModel.repositories.observe(this, Observer { repositories ->
+        repositoryViewModel.repositories.observe(this, Observer { repositories ->
             repositories?.let {
                 isLoading = false
-                repositoryAdapter2.updateData(it)
+                repositoryAdapter2.appendData(it)
             }
         })
 
-        viewModel.error.observe(this, Observer { errorMessage ->
+        repositoryViewModel.error.observe(this, Observer { errorMessage ->
             errorMessage?.let {
                 Toast.makeText(this, it, Toast.LENGTH_SHORT).show()
             }
+        })
+
+        repositoryViewModel.loading.observe(this, Observer { isLoading ->
+            // Show or hide the progress bar based on loading state
+            findViewById<ProgressBar>(R.id.progressBar).visibility =
+                if (isLoading) View.VISIBLE else View.GONE
         })
     }
 
     private fun fetchRepositories(query: String, page: Int = 1) {
         keyword = query
         isLoading = true
-        viewModel.fetchRepositories(query, page)
-    }
-
-    private fun fetchRepositoriesFromDatabase(query: String) {
-        // Fetch repositories from the database for the given keyword in a background thread
-        CoroutineScope(Dispatchers.IO).launch {
-            val repositoriesFromDb = viewModel.getRepositoriesForKeyword(query)
-            withContext(Dispatchers.Main) {
-                // Update UI on the main thread
-                if (repositoriesFromDb.isNotEmpty()) {
-                    repositoryAdapter2.updateData(repositoriesFromDb)
-                } else {
-                    Toast.makeText(this@MainActivity, "No repositories found in database", Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
+        repositoryViewModel.fetchRepositories(query, page)
     }
 
     override fun onItemClick(repository: RepositoriesDataClass) {
@@ -130,6 +133,3 @@ class MainActivity : AppCompatActivity(), RepositoryAdapterTest.OnItemClickListe
         startActivity(intent)
     }
 }
-
-
-
