@@ -33,7 +33,7 @@ interface GitHubApiService {
         @Query("per_page") perPage: Int // Add per_page parameter for limiting results per page
     ): Response<List<Contributor>>
 
-    @Headers("Authorization: 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")
+
     @GET("users/{login}/repos")
     suspend fun getRepositoriesByContributor(@Path("login") login: String): Response<List<ContributorRepoCard_modelData>>
 
