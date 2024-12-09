@@ -3,6 +3,7 @@ package com.example.gitclone.recyclerview_class_package.data_class_model
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
+
 @Entity(tableName = "repositories")
 data class RepositoriesDataClass(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,

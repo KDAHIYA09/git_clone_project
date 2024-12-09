@@ -1,7 +1,10 @@
 package com.example.gitclone.api_end_points
 
 import com.example.gitclone.model_class.Contributor
+import com.example.gitclone.model_class.ContributorRepoCard_modelData
 import com.example.gitclone.model_class.RepositoryResponse
+import com.example.gitclone.recyclerview_class_package.data_class_model.ContributorRepoCardData
+import com.example.gitclone.recyclerview_class_package.data_class_model.RepositoriesDataClass
 import retrofit2.Call
 import retrofit2.Response
 import retrofit2.http.GET
@@ -11,6 +14,7 @@ import retrofit2.http.Url
 
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import retrofit2.http.Headers
 
 interface GitHubApiService {
 
@@ -28,6 +32,11 @@ interface GitHubApiService {
         @Query("page") page: Int, // Add page parameter for pagination
         @Query("per_page") perPage: Int // Add per_page parameter for limiting results per page
     ): Response<List<Contributor>>
+
+    @Headers("Authorization: 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")
+    @GET("users/{login}/repos")
+    suspend fun getRepositoriesByContributor(@Path("login") login: String): Response<List<ContributorRepoCard_modelData>>
+
 
     companion object {
         private const val BASE_URL = "https://api.github.com/"

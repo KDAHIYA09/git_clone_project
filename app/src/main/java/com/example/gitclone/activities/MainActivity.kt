@@ -8,6 +8,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.viewModels
 import androidx.appcompat.widget.SearchView
+import androidx.appcompat.widget.Toolbar
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -40,6 +41,15 @@ class MainActivity : AppCompatActivity(), RepositoryAdapterTest.OnItemClickListe
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        // Find the toolbar
+        val toolbar: Toolbar = findViewById(R.id.toolbar)
+
+        // Set the toolbar as the action bar
+        setSupportActionBar(toolbar)
+
+        // Set the title
+        supportActionBar?.title = "Search for Repositories"
 
         recyclerView = findViewById(R.id.recyclerView)
         searchView = findViewById(R.id.searchView)
